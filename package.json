@@ -1,0 +1,27 @@
+{
+  "name": "sunny-island",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 4183",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4183",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "5.2.0",
+    "lucide-react": "0.546.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "vite": "6.4.3",
+    "motion": "12.43.0",
+    "@cloudbase/js-sdk": "3.6.2"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3",
+    "@types/node": "22.20.1",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3"
+  }
+}

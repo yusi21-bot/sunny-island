@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>晴日岛 · WebGL 成长场景</title>
+  <style>
+    @font-face{font-family:"-apple-system";src:local("Times New Roman");unicode-range:U+0000-024F,U+1E00-1EFF,U+2000-206F,U+20A0-20CF}
+    @font-face{font-family:"BlinkMacSystemFont";src:local("Times New Roman");unicode-range:U+0000-024F,U+1E00-1EFF,U+2000-206F,U+20A0-20CF}
+    @font-face{font-family:"Kaiti SC";src:local("Times New Roman");unicode-range:U+0000-024F,U+1E00-1EFF,U+2000-206F,U+20A0-20CF}
+    @font-face{font-family:"STKaiti";src:local("Times New Roman");unicode-range:U+0000-024F,U+1E00-1EFF,U+2000-206F,U+20A0-20CF}
+    @font-face{font-family:"KaiTi";src:local("Times New Roman");unicode-range:U+0000-024F,U+1E00-1EFF,U+2000-206F,U+20A0-20CF}
+    :root{--ink:#174b45;--muted:#68847e;--glass:rgba(255,255,248,.66);--line:rgba(255,255,255,.82);--sun:#ffbd3e;--green:#3b8d75;--shadow:0 24px 70px rgba(27,73,64,.18)}
+    *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#afd5dc;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif}
+    button{font:inherit;color:inherit}#world{position:fixed;inset:0;isolation:isolate;overflow:hidden;background:#dff3fb}#world:before{content:"";position:absolute;inset:0;z-index:0;background:url('./images/growth-island-clay-sky-square-v5.png') center/cover no-repeat;filter:brightness(1.05) contrast(1.01);transform:scale(1.012);transform-origin:center}canvas{position:relative;z-index:1;display:block;width:100%;height:100%;touch-action:none}
+    .wash{position:fixed;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(230,246,238,.48) 0,rgba(230,246,238,.05) 34%,transparent 60%),linear-gradient(0deg,rgba(18,75,68,.1),transparent 34%)}
+    .topbar{position:fixed;z-index:20;left:24px;right:24px;top:20px;display:flex;align-items:center;justify-content:space-between;pointer-events:none}
+    .brand,.wallet,.hand-toggle{pointer-events:auto;border:1px solid var(--line);background:var(--glass);box-shadow:0 12px 36px rgba(42,81,71,.12);backdrop-filter:blur(24px) saturate(1.35);-webkit-backdrop-filter:blur(24px) saturate(1.35)}
+    .brand{display:flex;align-items:center;gap:12px;padding:10px 15px 10px 11px;border-radius:22px}.brand i{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff8a4,#ffc84a 42%,#ec9d24 75%);box-shadow:0 0 22px rgba(255,193,55,.56)}.brand b{display:block;font-size:15px}.brand small{display:block;margin-top:2px;color:var(--muted);font-size:10px}
+    .top-actions{display:flex;align-items:center;gap:10px}.wallet{display:flex;align-items:center;gap:8px;padding:11px 15px;border-radius:18px}.wallet i{width:10px;height:10px;border-radius:50%;background:var(--sun);box-shadow:0 0 12px #ffcf51}.wallet span{color:#80611e;font-size:12px}.wallet strong{font-size:18px}.hand-toggle{padding:11px 15px;border-radius:18px;border-color:var(--line);cursor:pointer;font-size:12px;font-weight:750}.hand-toggle.active{background:rgba(55,136,113,.82);color:white}.hand-toggle:disabled{opacity:.55;cursor:wait}
+    .hero{position:fixed;z-index:10;left:5vw;top:17vh;width:min(390px,31vw);pointer-events:none}.eyebrow{display:flex;align-items:center;gap:8px;color:#3b8172;font-size:12px;font-weight:800;letter-spacing:.14em}.eyebrow:before{content:"";width:8px;height:8px;border-radius:50%;background:#57a887;box-shadow:0 0 0 6px rgba(88,168,136,.14)}.hero h1{margin:14px 0 12px;font-family:"Kaiti SC","STKaiti","KaiTi",serif;font-size:clamp(42px,4vw,68px);font-weight:600;line-height:1.06;letter-spacing:-.06em}.hero p{max-width:350px;margin:0;color:#587970;font-size:13px;line-height:1.8}
+    .places{position:fixed;z-index:14;left:5vw;bottom:118px;display:flex;gap:9px}.place{position:relative;min-width:102px;padding:12px 13px 11px;border:1px solid var(--line);border-radius:19px;background:rgba(255,255,247,.62);box-shadow:0 12px 30px rgba(36,75,66,.11);backdrop-filter:blur(20px);cursor:pointer;text-align:left;transition:.25s}.place:hover,.place.active{transform:translateY(-5px);background:rgba(255,253,232,.9);box-shadow:0 17px 37px rgba(36,75,66,.16)}.place:after{content:"";position:absolute;left:14px;right:14px;bottom:7px;height:2px;border-radius:9px;background:transparent}.place.active:after{background:linear-gradient(90deg,#4a9b80,#f2c04d)}.place b{display:block;font-size:12px}.place small{display:block;margin-top:4px;color:var(--muted);font-size:9px}
+    .drawer{position:fixed;z-index:24;right:24px;top:88px;bottom:96px;width:min(390px,31vw);padding:18px;border:1px solid var(--line);border-radius:34px;background:rgba(250,252,238,.7);box-shadow:var(--shadow);backdrop-filter:blur(30px) saturate(1.25);-webkit-backdrop-filter:blur(30px) saturate(1.25);overflow:hidden}.drawer-header{display:flex;align-items:start;justify-content:space-between;padding:4px 4px 14px}.drawer-header span{color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.1em}.drawer-header h2{margin:5px 0 0;font-family:"Kaiti SC","STKaiti","KaiTi",serif;font-size:27px;font-weight:600}.close-focus{width:34px;height:34px;border:1px solid rgba(255,255,255,.8);border-radius:50%;background:rgba(255,255,255,.55);cursor:pointer;font-size:17px}.scene-result{position:relative;height:136px;margin-bottom:13px;overflow:hidden;border:1px solid rgba(255,255,255,.75);border-radius:24px;background:linear-gradient(145deg,rgba(225,248,239,.7),rgba(255,243,200,.54))}.scene-result>div{position:absolute;inset:auto 17px 15px}.scene-result b{display:block;font-size:13px}.scene-result small{display:block;margin-top:4px;color:var(--muted);font-size:10px}.scene-result .orbit{position:absolute;right:-20px;top:-34px;width:155px;height:155px;border:1px solid rgba(68,143,119,.15);border-radius:50%;box-shadow:0 0 0 20px rgba(255,255,255,.1),0 0 0 40px rgba(255,255,255,.08)}.scene-result .hint{position:absolute;right:15px;top:13px;padding:6px 9px;border-radius:99px;background:rgba(255,255,255,.65);color:#4c786e;font-size:8px;font-weight:750}
+    .cards{height:calc(100% - 220px);padding:2px 3px 12px;overflow:auto;scrollbar-width:none}.cards::-webkit-scrollbar{display:none}.card{position:relative;display:grid;grid-template-columns:72px minmax(0,1fr) auto;align-items:center;gap:11px;width:100%;min-height:88px;margin-bottom:10px;padding:10px 11px;border:1px solid rgba(255,255,255,.86);border-radius:23px;background:rgba(255,255,255,.56);box-shadow:0 9px 22px rgba(49,83,69,.07);cursor:pointer;text-align:left;transition:.2s}.card:hover:not(:disabled){transform:translateY(-3px);background:rgba(255,254,235,.88);box-shadow:0 14px 28px rgba(49,83,69,.12)}.card:disabled{cursor:default}.card.owned{background:rgba(226,242,225,.66)}.thumb{position:relative;display:grid;place-items:center;width:72px;height:64px;border-radius:18px;background:radial-gradient(circle at 40% 35%,rgba(255,255,255,.95),rgba(211,236,222,.58));overflow:hidden}.thumb i{display:block;filter:drop-shadow(0 7px 5px rgba(50,74,57,.18))}.thumb .fish{width:50px;height:23px;border-radius:55% 45% 45% 55%;background:var(--tone,#f08a42);transform:rotate(-5deg)}.thumb .fish:before{content:"";position:absolute;right:-13px;top:3px;border-top:9px solid transparent;border-bottom:9px solid transparent;border-left:15px solid var(--tone,#f08a42)}.thumb .fish:after{content:"";position:absolute;left:12px;top:6px;width:6px;height:6px;border:3px solid white;border-radius:50%;background:#173f3c}.thumb .flower{position:relative;width:14px;height:38px;border-radius:12px;background:#4f9b69}.thumb .flower:before{content:"";position:absolute;left:-14px;top:-13px;width:42px;height:42px;border-radius:50%;background:radial-gradient(circle,#6f4720 0 24%,#ffd04e 26% 56%,transparent 58%);box-shadow:0 0 16px rgba(255,199,56,.45)}.thumb .decor{width:42px;height:38px;border-radius:8px 8px 3px 3px;background:var(--tone,#eeb14b);box-shadow:inset 0 0 0 5px rgba(90,75,46,.22)}.thumb .decor:before{content:"";position:absolute;width:46px;height:15px;transform:translate(-2px,-9px) rotate(0);background:#ee7b4a;clip-path:polygon(50% 0,100% 100%,0 100%)}
+    .card-copy{min-width:0}.card-copy b{display:block;overflow:hidden;font-size:12px;text-overflow:ellipsis;white-space:nowrap}.card-copy small{display:block;margin-top:4px;color:var(--muted);font-size:9px;line-height:1.4}.price{min-width:58px;padding:8px 9px;border-radius:13px;background:#3f8976;color:#fff;font-size:9px;font-weight:800;text-align:center}.owned .price{background:rgba(81,145,111,.13);color:#43816f}.preview-action{position:absolute;right:10px;bottom:8px;border:0;background:transparent;color:#497e71;font-size:8px;text-decoration:underline;cursor:pointer}
+    .toast{position:fixed;z-index:50;left:50%;top:44%;min-width:240px;padding:15px 21px;border:1px solid rgba(255,255,255,.9);border-radius:99px;background:rgba(255,248,192,.94);box-shadow:0 20px 50px rgba(78,66,26,.22);color:#745816;font-size:12px;font-weight:800;text-align:center;opacity:0;pointer-events:none;transform:translate(-50%,20px) scale(.9)}
+    .gesture-tip{position:fixed;z-index:18;left:50%;bottom:106px;padding:8px 13px;border:1px solid rgba(255,255,255,.74);border-radius:99px;background:rgba(255,255,255,.48);color:#52776f;font-size:9px;backdrop-filter:blur(16px);transform:translateX(-50%);opacity:.78}.camera{position:fixed;z-index:2;right:20px;bottom:20px;width:1px;height:1px;opacity:0;pointer-events:none}
+    .loading{position:fixed;z-index:100;inset:0;display:grid;place-items:center;background:linear-gradient(145deg,#dff6ef,#f8edc8);transition:.55s}.loading.hide{opacity:0;pointer-events:none}.loading div{text-align:center}.loading i{display:block;width:48px;height:48px;margin:0 auto 14px;border:5px solid rgba(57,129,107,.17);border-top-color:#438b75;border-radius:50%;animation:spin .8s linear infinite}.loading b{font-size:14px}.loading small{display:block;margin-top:6px;color:var(--muted);font-size:10px}@keyframes spin{to{transform:rotate(360deg)}}
+    body.embedded .topbar,body.embedded .hero,body.embedded .places,body.embedded .drawer,body.embedded .gesture-tip,body.embedded .camera{display:none!important}body.embedded .wash{opacity:.08}
+    @media(max-width:1050px){.hero{width:35vw}.hero h1{font-size:46px}.drawer{width:350px}.places{left:24px}.hero{left:30px}.gesture-tip{display:none}}
+    @media(max-width:760px){.topbar{left:12px;right:12px;top:12px}.brand small{display:none}.hero{left:18px;top:100px;width:74vw}.hero h1{font-size:38px}.hero p{font-size:11px}.places{left:12px;right:12px;bottom:86px;overflow:auto}.place{min-width:96px}.drawer{left:12px;right:12px;top:auto;bottom:84px;width:auto;height:48vh;border-radius:28px;transform:translateY(calc(100% + 100px));transition:.35s}.drawer.open{transform:translateY(0)}.drawer .cards{height:calc(100% - 205px)}.wallet span{display:none}.hand-toggle{padding:10px}.gesture-tip{display:none}}
+  </style>
+</head>
+<body>
+  <div id="world"></div><div class="wash"></div>
+  <div class="loading" id="loading"><div><i></i><b>正在唤醒成长小岛</b><small>搭建花圃、池塘与温暖木屋</small></div></div>
+  <header class="topbar"><div class="brand"><i></i><span><b>晴日岛</b><small>每一份努力都会留在场景里</small></span></div><div class="top-actions"><div class="wallet"><i></i><span>可用阳光</span><strong id="sunlight">76</strong></div><button class="hand-toggle" id="handToggle">开启手势</button></div></header>
+  <section class="hero"><span class="eyebrow">真正可以走近的晴日小岛</span><h1>把阳光，<br>种进今天的家</h1><p>拖动查看完整的黏土小岛，点击花圃或池塘进入近景。用努力获得的阳光，把喜欢的物件收入家庭收藏。</p></section>
+  <nav class="places"><button class="place active" data-focus="garden"><b>花圃</b><small>种下与照料</small></button><button class="place" data-focus="pond"><b>池塘</b><small>迎接新朋友</small></button><button class="place" data-focus="overview"><b>看看全岛</b><small>回到完整场景</small></button></nav>
+  <aside class="drawer open" id="drawer"><header class="drawer-header"><div><span id="drawerEyebrow">花圃近景</span><h2 id="drawerTitle">今天种点什么？</h2></div><button class="close-focus" id="closeFocus" aria-label="收起">×</button></header><div class="scene-result"><i class="orbit"></i><span class="hint">兑换后收入小岛收藏</span><div><b id="resultTitle">花圃目前有 1 株花</b><small id="resultText">点击已收藏物件，可以再次回到对应区域。</small></div></div><div class="cards" id="cards"></div></aside>
+  <div class="gesture-tip" id="gestureTip">拖动旋转 · 滚轮缩放 · 点击场景聚焦 · 手势可选</div><div class="toast" id="toast"></div>
+  <video class="camera" id="camera" playsinline></video>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script>
+  (()=>{
+    if(new URLSearchParams(location.search).has('embed'))document.body.classList.add('embedded');
+    const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+    const state={sunlight:76,focus:'garden',owned:{garden:['sunflower'],pond:['orange']}};
+    const catalog={
+      garden:[{id:'sunflower',name:'阳光向日葵',note:'已经在右侧花圃盛开',cost:10,tone:'#ffd04f'},{id:'coral',name:'珊瑚小花',note:'会长在池塘旁的花圃',cost:12,tone:'#ff8c72'},{id:'bluebell',name:'蓝铃花',note:'一簇柔软的蓝紫色小花',cost:14,tone:'#8da7ff'}],
+      pond:[{id:'orange',name:'橘子鱼',note:'橙色的小鱼，会绕着睡莲游',cost:12,tone:'#f08a42'},{id:'blue',name:'蓝斑鱼',note:'蓝绿色斑点，游速更轻快',cost:16,tone:'#58aab7'},{id:'silver',name:'银鳞鱼',note:'银白色鱼鳞会反射阳光',cost:14,tone:'#cbd7d4'},{id:'koi',name:'红白锦鲤',note:'会沿池塘外圈缓慢巡游',cost:20,tone:'#ef654f'}]
+    };
+    const labels={garden:['花圃近景','今天种点什么？'],pond:['池塘近景','迎接哪位新朋友？']};
+    let scene,camera,renderer,composer,controls,island,water,modelRoot,baseRoot,cottageRoot,raycaster,pointer,activeTween,handCamera,hands,lastPinch=0,sceneFrame=null;
+    const groups={},objects={},clock=new THREE.Clock();
+    const mat=(color,rough=.83,metal=.02,emissive=0,ei=0)=>new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal,emissive,emissiveIntensity:ei});
+    const mesh=(geo,material,group,pos,scale,rot)=>{const m=new THREE.Mesh(geo,material);m.castShadow=m.receiveShadow=true;if(pos)m.position.set(...pos);if(scale)m.scale.set(...scale);if(rot)m.rotation.set(...rot);group.add(m);return m};
+    async function init(){
+      scene=new THREE.Scene();scene.background=null;scene.fog=new THREE.Fog(0xe7eee5,42,92);
+      camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,.1,100);camera.position.set(15,11,18);
+      renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});renderer.setClearColor(0x000000,0);renderer.setPixelRatio(Math.min(devicePixelRatio,1.35));renderer.setSize(innerWidth,innerHeight);renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.865;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;$('#world').appendChild(renderer.domElement);
+      controls=new THREE.OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.055;controls.target.set(0,2.6,0);controls.minDistance=8;controls.maxDistance=30;controls.maxPolarAngle=Math.PI*.52;controls.enablePan=false;
+      composer=new THREE.EffectComposer(renderer);composer.addPass(new THREE.RenderPass(scene,camera));const bloom=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.18,.55,.9);composer.addPass(bloom);
+      scene.add(new THREE.HemisphereLight(0xfff1d9,0x6e9892,.78));const sun=new THREE.DirectionalLight(0xffe8bb,1.05);sun.position.set(-8,16,10);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-18;sun.shadow.camera.right=18;sun.shadow.camera.top=18;sun.shadow.camera.bottom=-18;scene.add(sun);
+      const fill=new THREE.DirectionalLight(0x83c8d2,.18);fill.position.set(12,7,-8);scene.add(fill);
+      try{await buildWorld();raycaster=new THREE.Raycaster();pointer=new THREE.Vector2();renderer.domElement.addEventListener('pointerdown',pickScene);addEventListener('resize',resize);bindUI();renderCards('garden');focus('overview',false);animate();$('#loading').classList.add('hide');}
+      catch(err){console.error(err);$('#loading b').textContent='小岛模型加载失败';$('#loading small').textContent='请刷新页面重试，界面功能不会丢失';}
+    }
+    function prepareModel(root){
+      root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;const materials=Array.isArray(o.material)?o.material:[o.material];materials.filter(Boolean).forEach(material=>{material.envMapIntensity=.42;if(material.emissiveMap)material.emissiveIntensity=.28;material.needsUpdate=true;});}});return root;
+    }
+    function loadModel(url,progressStart,progressSpan){
+      return new Promise((resolve,reject)=>{
+        const loader=new THREE.GLTFLoader();
+        if(THREE.DRACOLoader){
+          const dracoLoader=new THREE.DRACOLoader();
+          dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+          loader.setDRACOLoader(dracoLoader);
+        }
+        loader.load(url,gltf=>resolve(prepareModel(gltf.scene)),xhr=>{if(xhr.total){const pct=Math.min(99,Math.round(progressStart+xhr.loaded/xhr.total*progressSpan));$('#loading small').textContent=`正在组合模块化小岛 ${pct}%`;}},reject);
+      });
+    }
+    function normalizeModel(root,targetSize,rotation=0){
+      const box=new THREE.Box3().setFromObject(root),center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
+      const scale=targetSize/Math.max(size.x,size.y,size.z);
+      root.position.set(-center.x,-box.min.y,-center.z);
+      const group=new THREE.Group();group.scale.setScalar(scale);group.rotation.y=rotation;group.add(root);return group;
+    }
+    function measureScene(){
+      baseRoot.updateMatrixWorld(true);
+      const box=new THREE.Box3().setFromObject(baseRoot),center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
+      const sphere=box.getBoundingSphere(new THREE.Sphere());
+      sceneFrame={box,center,size,radius:Math.max(sphere.radius,1)};
+      controls.minDistance=Math.max(sceneFrame.radius*.5,3.5);
+      controls.maxDistance=Math.max(sceneFrame.radius*4.2,32);
+      camera.near=Math.max(sceneFrame.radius/150,.05);
+      camera.far=Math.max(sceneFrame.radius*18,120);
+      camera.updateProjectionMatrix();
+    }
+    function sceneShot(type){
+      const frame=sceneFrame||{center:new THREE.Vector3(0,3.8,0),size:new THREE.Vector3(13,7,13),radius:7};
+      const c=frame.center.clone(),r=frame.radius;
+      if(type==='overview'){
+        const halfFov=THREE.MathUtils.degToRad(camera.fov*.5);
+        const horizontalFov=2*Math.atan(Math.tan(halfFov)*Math.max(camera.aspect,.25));
+        const direction=new THREE.Vector3(.78,.53,1).normalize();
+        const right=new THREE.Vector3().crossVectors(direction,camera.up).normalize();
+        const cameraRight=new THREE.Vector3().crossVectors(camera.up,direction).normalize();
+        const viewUp=new THREE.Vector3().crossVectors(right,direction).normalize();
+        const corners=[];for(const x of [frame.box.min.x,frame.box.max.x])for(const y of [frame.box.min.y,frame.box.max.y])for(const z of [frame.box.min.z,frame.box.max.z])corners.push(new THREE.Vector3(x,y,z));
+        let distance=0;for(const corner of corners){const offset=corner.sub(c);distance=Math.max(distance,offset.dot(direction)+Math.abs(offset.dot(right))/Math.tan(horizontalFov*.5),offset.dot(direction)+Math.abs(offset.dot(viewUp))/Math.tan(halfFov));}
+        distance*=.95;
+        const composedTarget=c.clone().add(cameraRight.multiplyScalar(frame.size.x*.045));
+        composedTarget.y+=frame.size.y*.095;
+        return {p:composedTarget.clone().add(direction.multiplyScalar(distance)),t:composedTarget};
+      }
+      const anchors={
+        pond:new THREE.Vector3(.24,.25,.08),
+        garden:new THREE.Vector3(.24,.27,.25)
+      };
+      const a=anchors[type]||new THREE.Vector3();
+      const target=new THREE.Vector3(c.x+a.x*frame.size.x,frame.box.min.y+a.y*frame.size.y,c.z+a.z*frame.size.z);
+      const direction=(type==='pond'?new THREE.Vector3(.72,.62,1):new THREE.Vector3(.9,.58,.72)).normalize();
+      const cameraRight=new THREE.Vector3().crossVectors(camera.up,direction).normalize();
+      const composedTarget=target.clone().add(cameraRight.multiplyScalar(frame.size.x*.045));
+      composedTarget.y+=frame.size.y*.085;
+      return {p:composedTarget.clone().add(direction.multiplyScalar(r*1.76)),t:composedTarget};
+    }
+    async function buildWorld(){
+      water=mesh(new THREE.CircleGeometry(55,128),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,depthWrite:false}),scene,[0,-.12,0],[1,1,1],[-Math.PI/2,0,0]);
+      island=new THREE.Group();island.position.y=1.05;scene.add(island);
+      const hotspotMaterial=new THREE.MeshBasicMaterial({transparent:true,opacity:.001,depthWrite:false});
+      const addHotspot=(type,pos,radius)=>{const g=new THREE.Group();g.position.set(...pos);g.userData.focus=type;const hit=new THREE.Mesh(new THREE.SphereGeometry(radius,18,12),hotspotMaterial);g.add(hit);groups[type]=g;island.add(g)};
+      addHotspot('garden',[2.55,2.35,1.65],2);addHotspot('pond',[2.15,2.25,-.25],1.75);
+      $('#loading small').textContent='正在组合模块化小岛 0%';
+      const islandModel=await loadModel('./assets/3d/growth-island/island-latest-optimized.glb',0,100);
+      baseRoot=normalizeModel(islandModel,12,-.08);island.add(baseRoot);modelRoot=island;measureScene();
+      groups.garden.position.set(2.8,3.9,1.8);groups.pond.position.set(2.7,3.6,-.3);
+      $('#loading small').textContent='小岛场景准备完成';
+    }
+    function buildGardenBase(){const g=groups.garden;for(let i=0;i<3;i++){mesh(new THREE.CylinderGeometry(.72,.85,.25,20),mat(0x765139),g,[i*1.45-1.45,.08,0],[1,.55,1]);}g.userData.focus='garden';}
+    function buildPond(){const g=groups.pond;const pond=mesh(new THREE.CylinderGeometry(2.55,2.7,.22,44),new THREE.MeshPhysicalMaterial({color:0x42bdd0,roughness:.22,transmission:.18,transparent:true,opacity:.92}),g,[0,.08,0],[1,.35,.72]);pond.userData.focus='pond';for(let i=0;i<22;i++){const a=i/22*Math.PI*2;mesh(new THREE.DodecahedronGeometry(.25+Math.random()*.15,0),mat(0xb8a98b),g,[Math.cos(a)*2.55,.17,Math.sin(a)*1.85],[1,.7,1]);}for(let i=0;i<4;i++){const l=mesh(new THREE.CylinderGeometry(.33,.38,.04,18),mat(0x7cb966),g,[Math.cos(i*1.8)*1.45,.26,Math.sin(i*1.8)*.95],[1,.35,.7]);l.rotation.y=i;}}
+    function buildTrees(){[[-5,1,-2.7],[-3.9,1,-4.9],[5.8,1,-3.6]].forEach((p,i)=>{const t=new THREE.Group();island.add(t);t.position.set(...p);mesh(new THREE.CylinderGeometry(.38,.55,3.2,12),mat(0x8f603a),t,[0,1.5,0]);for(let j=0;j<7;j++){const a=j/7*Math.PI*2;mesh(new THREE.IcosahedronGeometry(1.25+(j%2)*.2,1),mat(i===1?0x4e8c55:0x68a858),t,[Math.cos(a)*.8,3.4+(j%3)*.35,Math.sin(a)*.7],[1,1,.9]);}})}
+    function flower(id,tone){const g=new THREE.Group(),stem=mat(0x4f9c62),petal=mat(tone);mesh(new THREE.CylinderGeometry(.06,.1,1.25,10),stem,g,[0,.62,0]);mesh(new THREE.SphereGeometry(.22,14,10),mat(0x6e4a25),g,[0,1.37,0]);for(let i=0;i<9;i++){const a=i/9*Math.PI*2,p=mesh(new THREE.SphereGeometry(.24,12,8),petal,g,[Math.cos(a)*.34,1.37+Math.sin(a)*.34,0],[1,.72,.45]);p.rotation.z=a;}g.userData.item=id;return g;}
+    function fish(id,tone){const g=new THREE.Group(),body=mesh(new THREE.SphereGeometry(.42,18,12),mat(tone,.45,.03),g,[0,0,0],[1.65,.72,.55]);const tail=mesh(new THREE.ConeGeometry(.42,.72,3),mat(tone),g,[-.83,0,0],[1,1,.55],[0,0,-Math.PI/2]);mesh(new THREE.SphereGeometry(.06,10,8),mat(0x152f2f,.3),g,[.48,.12,.2]);g.userData.item=id;g.userData.phase=Math.random()*6;return g;}
+    function spawnItem(type,id,animateIn=true){objects[type+'-'+id]=groups[type];if(animateIn){gsap.fromTo(groups[type].scale,{x:.92,y:.92,z:.92},{x:1,y:1,z:1,duration:.72,ease:'elastic.out(1,.36)'});}}
+    function focus(type,open=true){state.focus=type;$$('.place').forEach(b=>b.classList.toggle('active',b.dataset.focus===type));if(type!=='overview'){$('#drawer').classList.toggle('open',open);renderCards(type)}
+      const shot=sceneShot(type);if(activeTween)activeTween.kill();activeTween=gsap.timeline().to(camera.position,{x:shot.p.x,y:shot.p.y,z:shot.p.z,duration:1.15,ease:'power3.inOut'},0).to(controls.target,{x:shot.t.x,y:shot.t.y,z:shot.t.z,duration:1.15,ease:'power3.inOut',onUpdate:()=>controls.update()},0);}
+    function renderCards(type){if(type==='overview')return;const [eye,title]=labels[type];$('#drawerEyebrow').textContent=eye;$('#drawerTitle').textContent=title;const owned=state.owned[type];$('#resultTitle').textContent=type==='garden'?`已经收藏 ${owned.length} 种花`:type==='pond'?`已经收藏 ${owned.length} 位池塘伙伴`:`已经收藏 ${owned.length} 件木屋物品`;$('#resultText').textContent='兑换会收入家庭收藏册；点击已收藏物件，可以再次回到对应区域。';$('#cards').innerHTML=catalog[type].map(item=>{const has=owned.includes(item.id),shape=type==='garden'?'flower':type==='pond'?'fish':'decor';return `<button class="card ${has?'owned':''}" data-id="${item.id}" style="--tone:${item.tone}"><span class="thumb"><i class="${shape}"></i></span><span class="card-copy"><b>${item.name}</b><small>${item.note}</small></span><span class="price">${has?'已收藏':'− '+item.cost+' 阳光'}</span>${has?'<span class="preview-action">回到区域</span>':''}</button>`}).join('');$$('.card').forEach(card=>card.onclick=()=>buyOrPreview(type,card.dataset.id));}
+    function buyOrPreview(type,id){if(state.owned[type].includes(id)){focus(type);pulseObject(type,id);toast('镜头已经回到它所属的区域');return}const item=catalog[type].find(x=>x.id===id);if(state.sunlight<item.cost){toast(`还差 ${item.cost-state.sunlight} 点阳光`);return}state.sunlight-=item.cost;state.owned[type].push(id);$('#sunlight').textContent=state.sunlight;spawnItem(type,id,true);renderCards(type);focus(type);pulseObject(type,id);toast(`${item.name}已经收入家庭收藏`);}
+    function pulseObject(type,id){const o=objects[type+'-'+id];if(!o)return;gsap.fromTo(o.scale,{x:.82,y:.82,z:.82},{x:1,y:1,z:1,duration:.75,ease:'elastic.out(1,.35)'});}
+    function toast(text){const t=$('#toast');t.textContent=text;gsap.killTweensOf(t);gsap.timeline().to(t,{opacity:1,y:0,scale:1,duration:.35,ease:'back.out(1.7)'}).to(t,{opacity:0,y:-18,scale:.95,duration:.3,delay:1.25});}
+    function bindUI(){$$('.place').forEach(b=>b.onclick=()=>focus(b.dataset.focus));$('#closeFocus').onclick=()=>{$('#drawer').classList.remove('open');focus('overview',false)};$('#handToggle').onclick=toggleHands;window.addEventListener('message',event=>{if(event.origin!==location.origin||!event.data||event.data.type!=='growth-focus')return;const type=['overview','garden','pond'].includes(event.data.focus)?event.data.focus:'overview';focus(type,false);});}
+    function pickScene(e){pointer.x=e.clientX/innerWidth*2-1;pointer.y=-(e.clientY/innerHeight)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(island.children,true);for(const hit of hits){let o=hit.object;while(o&&o!==scene){if(o.userData.focus){focus(o.userData.focus);return}o=o.parent;}}}
+    function loadScript(src){return new Promise((resolve,reject)=>{if([...document.scripts].some(script=>script.src===src)||document.querySelector(`script[data-src="${src}"]`)){resolve();return}const script=document.createElement('script');script.src=src;script.async=true;script.dataset.src=src;script.onload=resolve;script.onerror=reject;document.head.appendChild(script);});}
+    async function loadHandRuntime(){if(window.Hands&&window.Camera)return;await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js');await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js');}
+    async function toggleHands(){const btn=$('#handToggle');if(handCamera){handCamera.stop();handCamera=null;btn.classList.remove('active');btn.textContent='开启手势';toast('手势控制已关闭');return}btn.disabled=true;btn.textContent='正在连接…';try{await loadHandRuntime();hands=new Hands({locateFile:file=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});hands.setOptions({maxNumHands:1,modelComplexity:0,minDetectionConfidence:.6,minTrackingConfidence:.55});hands.onResults(onHands);handCamera=new Camera($('#camera'),{onFrame:async()=>hands.send({image:$('#camera')}),width:640,height:480});await handCamera.start();btn.disabled=false;btn.classList.add('active');btn.textContent='手势已开启';toast('移动食指旋转，捏合聚焦当前区域');}catch(err){btn.disabled=false;btn.textContent='开启手势';handCamera=null;toast('未获得摄像头权限，鼠标交互仍可正常使用');}}
+    function onHands(result){const lm=result.multiHandLandmarks&&result.multiHandLandmarks[0];if(!lm)return;const dx=(.5-lm[8].x)*.04;camera.position.applyAxisAngle(new THREE.Vector3(0,1,0),dx);const pinch=Math.hypot(lm[8].x-lm[4].x,lm[8].y-lm[4].y);if(pinch<.055&&Date.now()-lastPinch>1300){lastPinch=Date.now();focus(state.focus==='overview'?'garden':state.focus);toast('手势已聚焦当前区域');}}
+    function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();Object.entries(objects).forEach(([key,o],idx)=>{if(key.startsWith('pond-')){const p=o.children[0]||o,a=t*(.35+idx*.035)+(p.userData.phase||idx);o.position.x=Math.cos(a)*1.35;o.position.z=Math.sin(a)*.82;o.rotation.y=-a+Math.PI/2;o.position.y=.34+Math.sin(t*2+idx)*.05}if(key.startsWith('garden-'))o.rotation.z=Math.sin(t*1.2+idx)*.025;});controls.update();renderer.render(scene,camera);}
+    function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);if(state.focus==='overview'&&sceneFrame)focus('overview',false)}
+    if(window.THREE&&window.THREE.GLTFLoader&&window.gsap)init();else{$('#loading b').textContent='场景资源加载失败';$('#loading small').textContent='请检查网络后刷新页面';}
+  })();
+  </script>
+</body>
+</html>
