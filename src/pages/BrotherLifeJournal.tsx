@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { analyzeMealWithCloudbase, MealAnalysis } from "../cloudSync";
+import { analyzeMealWithCloudbase, mealAiEnabled, MealAnalysis } from "../cloudSync";
 import { prepareMealImage } from "../mealImage";
 import { SharedPostOptions } from "../constants";
 
@@ -43,7 +43,8 @@ export function BrotherLifeJournal({ onShare }: { onShare: (text: string, option
       <header><span>🍽️</span><div><small>餐食记录</small><b>今天吃了什么</b></div><label>{mealPreview ? "换一张" : "上传"}<input type="file" accept="image/*" onChange={(event) => { const file = event.target.files?.[0]; if (file) void pickImage(file, "meal"); }} /></label></header>
       <div className="brother-record-body">{mealPreview ? <img src={mealPreview} alt="餐食预览" /> : <span className="record-placeholder">一张照片<br />就能开始</span>}<textarea value={mealText} onChange={(event) => setMealText(event.target.value)} placeholder="写下菜名或份量" maxLength={120} /></div>
       {mealAnalysis && <p className="brother-analysis"><b>{mealAnalysis.estimatedCalories}</b>{mealAnalysis.suggestion}</p>}{mealError && <p className="meal-error">{mealError}</p>}
-      <footer>{mealAnalysis && <button className="quiet" onClick={() => setMealAnalysis(null)}>重写</button>}<button onClick={mealAnalysis ? shareMeal : analyzeMeal} disabled={mealBusy || (!mealText.trim() && !mealImageData)}>{mealBusy ? "分析中…" : mealAnalysis ? "分享给家人" : "AI 看一看"}</button></footer>
+      {!mealAiEnabled && <p className="meal-demo-note">公开演示未开放 AI 分析，可直接分享餐食。</p>}
+      <footer>{mealAnalysis && <button className="quiet" onClick={() => setMealAnalysis(null)}>重写</button>}<button onClick={mealAnalysis || !mealAiEnabled ? shareMeal : analyzeMeal} disabled={mealBusy || (!mealText.trim() && !mealImageData)}>{mealBusy ? "分析中…" : mealAnalysis || !mealAiEnabled ? "分享给家人" : "AI 看一看"}</button></footer>
     </article>
     <article className="brother-record-card moment-record-card">
       <header><span>📷</span><div><small>个人记录</small><b>留下这一刻</b></div><label>{momentPreview ? "换一张" : "上传"}<input type="file" accept="image/*" onChange={(event) => { const file = event.target.files?.[0]; if (file) void pickImage(file, "moment"); }} /></label></header>

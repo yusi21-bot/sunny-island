@@ -28,6 +28,8 @@ tests/policies.test.mjs     输入边界和隔离测试
 
 ## 模型调用
 
+公开环境关闭 `analyzeMeal` 调用权限，前端默认 `VITE_ENABLE_MEAL_AI=false`，允许直接分享餐食记录。下述流程是保留的接入实现，本次未启用。固定指令在 `cloudfunctions/analyzeMeal/prompt.js`，密钥在服务端环境变量。
+
 浏览器把图片压缩为最长边 900 像素的 JPEG。云函数验证图片和文字，预占当天全局调用次数，再经 HTTPS 请求视觉模型，校验 JSON 结构后返回。
 
 `FOOD_AI_BASE_URL` 默认 DashScope 兼容接口；`FOOD_AI_MODEL` 与 `FOOD_AI_API_KEY` 必须显式设置。原线上具体模型没有可验证的配置，不能用代码默认值反推。模型服务会接收用户主动提交的餐食图片与文字。

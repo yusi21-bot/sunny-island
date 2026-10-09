@@ -5,6 +5,7 @@ import { demoRoomToken } from "./demoRoom";
 // Use the CloudBase environment that contains the configured collection and auth settings.
 const CLOUD_ENV_ID = import.meta.env.VITE_CLOUDBASE_ENV_ID || "";
 export const cloudConfigured = Boolean(CLOUD_ENV_ID);
+export const mealAiEnabled = import.meta.env.VITE_ENABLE_MEAL_AI === "true";
 const CLOUD_REGION = import.meta.env.VITE_CLOUDBASE_REGION || "ap-shanghai";
 type CloudbaseApp = {
   auth: () => { signInAnonymously: () => Promise<{ error?: { message?: string } | null }> };
@@ -69,6 +70,7 @@ export async function saveCloudState(state:AppState) {
 }
 
 export async function analyzeMealWithCloudbase(input: { description: string; imageDataUrl?: string | null }) {
+  if (!mealAiEnabled) throw new Error("公开演示未开放 AI 调用，可直接记录并分享餐食");
   const app = await getCloudbaseApp();
   const response = await app.callFunction({
     name: "analyzeMeal",

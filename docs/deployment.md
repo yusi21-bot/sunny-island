@@ -1,60 +1,61 @@
-# 部署与验收
+# 部署说明
 
-当前（2026-10-09）：GitHub Pages 自动构建、测试与发布成功，公开页面 HTTP 200。独立上海环境 `sunny-island-demo-d9dc2x8f51ae43` 已开通，两个集合已设为 ADMINONLY，`islandState` / `analyzeMeal` 已部署为 Nodejs20.19 事件函数。匿名访客登录待开启；模型尚未配置，调用额度保持 0。部署成功不等于跨设备同步和模型调用验收通过。
+2026-10-09 已发布：
 
-在线地址：https://yusi21-bot.github.io/sunny-island/
+- [独立云端演示](https://sunny-island-demo-d9dc2x8f51ae43-1454815199.tcloudbaseapp.com/)：配置匿名登录、演示数据库和同步云函数。首次访问可能出现腾讯云测试域名提示。
+- [GitHub Pages 预览](https://yusi21-bot.github.io/sunny-island/)：本机保存。体验版拒绝添加 GitHub Pages 和本地调试安全域名，所以此地址未配置云同步。
 
-环境体验版到期时间：2027-04-09 23:59:59；自动续费和超额付费均关闭。
+云环境 `sunny-island-demo-d9dc2x8f51ae43`，上海。体验版到期时间为 2027-04-09 23:59:59，自动续费和超额付费关闭。模型服务未开通调用。套餐限制以控制台为准。
 
 ## 前端
 
-Node.js 22 LTS 下执行 `npm install`、`npm run build`，将 `dist/` 发布到 GitHub Pages 或静态托管。资源路径为相对路径，支持仓库子路径。
+Node.js 22 LTS，执行 `npm ci`、`npm run build`，发布 `dist/`。资源采用相对路径，支持仓库子路径。
 
-将 `.env.example` 复制为 `.env.local`：
+不填写环境配置时使用本机存储。云端版本将 `.env.example` 复制为不提交的 `.env.local`：
 
 ```dotenv
-VITE_CLOUDBASE_ENV_ID=新的独立演示环境ID
+VITE_CLOUDBASE_ENV_ID=你的独立环境ID
 VITE_CLOUDBASE_REGION=ap-shanghai
+VITE_ENABLE_MEAL_AI=false
 ```
 
-环境 ID 是连接配置，不是 API 密钥。不要给 `VITE_` 变量填模型密钥。修改后重新构建。留空时只运行本机预览。
+环境 ID 不是密钥；所有 `VITE_` 变量都会进入前端，不能存放模型密钥。修改后重新构建。当前免费环境只能使用平台允许的来源，不能靠填写环境 ID 绕过安全域名限制。
 
-## CloudBase
+## 后端
 
-选择独立演示环境及兼容 CloudBase 文档 API 的云数据库（JSON 文档数据库），不要直接用 PostgreSQL 替代。费用与到期政策以控制台订单为准。
+使用兼容 CloudBase 文档 API 的 JSON 云数据库。现有实现不能直接换成 PostgreSQL。
 
-1. 开启所需匿名登录，将演示域名和本地调试来源加入安全域名。
-2. 创建 `sunny_island_demo_state` 和 `sunny_island_demo_usage` 集合。
-3. 集合拒绝客户端直接读写，仅云函数服务端访问；本次设为 `ADMINONLY`（等价于客户端读写条件均为 `false`）。
-4. 新建 `islandState` 和 `analyzeMeal` 函数，上传各目录完整内容，包括 `policy.js` 和 `package.json`，安装依赖。
-5. 入口均为 `index.main`，选择支持 `fetch` 的 Node.js 运行时（建议 20 或以上，以控制台可用版本为准），餐食函数超时至少 30 秒。
-6. 使用 SDK 携带登录上下文调用，不额外开放无需鉴权的 HTTP 入口。
+1. 在独立演示环境开启匿名登录，使用套餐允许的静态托管域名。
+2. 创建 `sunny_island_demo_state`、`sunny_island_demo_usage` 两个集合，权限均设为 `ADMINONLY`，客户端不能直接读写。
+3. 部署 `cloudfunctions/` 下两个函数的完整目录并安装依赖，入口 `index.main`，运行时 Nodejs20.19。配置见 `cloudbaserc.json`。
+4. 设置环境的云函数调用权限：
 
-## 模型
+```json
+{
+  "*": { "invoke": false },
+  "islandState": { "invoke": "auth != null" },
+  "analyzeMeal": { "invoke": false }
+}
+```
 
-仅在餐食云函数环境变量中填写：
+这只允许已登录的客户端调用同步函数，包含匿名登录。同步函数还检查随机空间令牌和版本号。空间链接持有人可以读写，适合虚构演示，不是正式家庭隐私授权系统。
 
-| 变量 | 用途 |
-| --- | --- |
-| `FOOD_AI_API_KEY` | 服务端密钥 |
-| `FOOD_AI_BASE_URL` | HTTPS 兼容接口，默认 `https://dashscope.aliyuncs.com/compatible-mode/v1` |
-| `FOOD_AI_MODEL` | 账号可用且支持图片和 JSON 输出的模型 ID，必填 |
-| `DEMO_AI_DAILY_LIMIT` | 每日演示总次数，默认 0，首次验收可设 10 |
+官方 CLI 登录后，在本项目目录部署：
 
-密钥不要提交 Git、粘贴到聊天或放进截图。测试用虚构文字及不含个人信息的餐食照片。
+```bash
+tcb fn deploy --all --install-dependency true
+npm run build
+tcb hosting deploy ./dist --verify
+```
 
-## 验收表
+## 餐食 AI
 
-| 检查 | 通过标准 | 状态 |
-| --- | --- | --- |
-| 静态站点 | 公开地址、刷新、子路径资源正常 | 自动发布成功、HTTP 200；公网浏览器交互复验待完成 |
-| 初始化 | 匿名登录并创建虚构空间 | 待匿名登录与端到端验收 |
-| 隔离 | 不同空间无法看到彼此记录 | 待匿名登录与端到端验收 |
-| 同岛同步 | 设备 A 修改日程和留言，设备 B 能看到 | 待匿名登录与端到端验收 |
-| 并发 | 旧版本写入被拒绝，页面提示 | 待匿名登录与端到端验收 |
-| 餐食 AI | 真实图片经模型返回合法结果 | 待模型配置 |
-| 用户确认 | AI 结果经点击分享后才进入动态 | 待真实调用 |
-| 失败提示 | 未配置、断网、额度耗尽不会显示假结果 | 本地未配置提示已通过；其余待云端 |
-| 发布检查 | 无密钥和真实家庭记录 | 发布前检查 |
+本次按项目作者的选择不开放付费模型调用：前端关闭分析入口、云函数禁止客户端调用、服务端额度为 0，且不配置模型密钥。餐食记录仍可直接分享。
 
-完成后再更新状态。套餐和外部模型分别计费；建议先限制调用额度，不默认开启无限按量或自动续费。到期前决定续费或下线，有保留需要时自行导出并验证备份。
+以后自用接入的方法、system prompt 和密钥位置见 [餐食 AI 说明](meal-ai.md)。不要只打开前端按钮就认为已接入模型，也不要把密钥上传到 GitHub。
+
+## 验证与限制
+
+已通过官方 SDK 对真实环境的匿名登录、保存、独立客户端读回、空间分离、旧版本拒绝和权限拒绝测试。发布文件校验通过。浏览器完整双设备操作仍需复验，详见 [验证记录](verification.md)。
+
+[CloudBase 云函数安全规则](https://docs.cloudbase.net/cloud-function/security-rules) · [管理端安全规则 API](https://docs.cloudbase.net/en/api-reference/manager/node/rule)

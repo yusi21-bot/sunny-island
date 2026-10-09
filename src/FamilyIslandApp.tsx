@@ -55,6 +55,7 @@ export default function FamilyIslandApp() {
   const [statusEditor, setStatusEditor] = useState<PersonId | null>(null);
   const [sunlightLedgerOpen, setSunlightLedgerOpen] = useState(false);
   const [toast, setToast] = useState("");
+  const [cloudStatus, setCloudStatus] = useState<"connecting" | "connected" | "error">("connecting");
   const cloudReadyRef = useRef(false);
   const applyingRemoteRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -77,19 +78,25 @@ export default function FamilyIslandApp() {
           await saveCloudState(localState);
         }
         cloudReadyRef.current = true;
+        setCloudStatus("connected");
         stopWatching = await watchCloudState(
           (remote) => {
             if (stopped) return;
+            setCloudStatus("connected");
             applyingRemoteRef.current = true;
             setState((current) => ({ ...remote, currentUser: current.currentUser }));
           },
           (message) => {
             console.warn("CloudBase realtime sync failed:", message);
+            if (!stopped) setCloudStatus("error");
           },
         );
       } catch (error) {
         console.warn("CloudBase sync unavailable:", error);
-        if (!stopped) setToast("云同步暂未连接，本机继续可用");
+        if (!stopped) {
+          setCloudStatus("error");
+          setToast("云同步暂未连接，本机继续可用");
+        }
       }
     };
 
@@ -111,9 +118,10 @@ export default function FamilyIslandApp() {
     if (!cloudReadyRef.current) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      saveCloudState({ ...state, currentUser: "brother" }).catch((error) => {
+      saveCloudState({ ...state, currentUser: "brother" }).then(() => setCloudStatus("connected")).catch((error) => {
         console.warn("CloudBase save failed:", error);
-        setToast("云端保存失败，已先保存在本机");
+        setCloudStatus("error");
+        setToast(error instanceof Error ? error.message : "云端保存失败，已先保存在本机");
       });
     }, 650);
   }, [state, hydrated]);
@@ -325,7 +333,7 @@ export default function FamilyIslandApp() {
 
   return (
     <div className={`family-app page-${page} role-${state.currentUser}`}>
-      <aside className="demo-banner">公开演示 · 虚构家庭 · {cloudConfigured ? "云端已配置 · 仅放示例内容" : "本机预览，云端待配置"}<button className="room-link" disabled={!cloudConfigured} title={cloudConfigured ? "分享给另一台设备" : "云端配置完成后开放"} onClick={() => navigator.clipboard.writeText(demoRoomLink()).then(() => setToast("演示空间链接已复制；另一台设备打开后可查看同一份内容")).catch(() => setToast("当前浏览器无法复制链接"))}>复制同岛链接</button></aside>
+      <aside className="demo-banner">公开演示 · 虚构家庭 · {cloudConfigured ? cloudStatus === "connected" ? "云同步已连接" : cloudStatus === "connecting" ? "正在连接云同步" : "云同步未连接，本机可用" : "本机预览，云端待配置"}<button className="room-link" disabled={!cloudConfigured || cloudStatus !== "connected"} title={cloudStatus === "connected" && cloudConfigured ? "分享给另一台设备" : "云同步连接成功后开放"} onClick={() => navigator.clipboard.writeText(demoRoomLink()).then(() => setToast("演示空间链接已复制；另一台设备打开后可查看同一份内容")).catch(() => setToast("当前浏览器无法复制链接"))}>复制同岛链接</button></aside>
       <Header state={state} onHome={() => setPage("home")} onSetUser={(currentUser) => setState({ ...state, currentUser })} onEditStatus={() => setStatusEditor(state.currentUser)} onOpenSunlight={() => setSunlightLedgerOpen(true)} />
       <main>
         {page === "home" && <HomePage state={state} onEditStatus={openOwnStatusEditor} onNavigate={setPage} />}
