@@ -1,0 +1,9 @@
+{
+  "envId": "sunny-island-demo-d9dc2x8f51ae43",
+  "region": "ap-shanghai",
+  "functionRoot": "cloudfunctions",
+  "functions": [
+    {"name":"islandState","runtime":"Nodejs20.19","handler":"index.main","timeout":15,"memorySize":128,"installDependency":true},
+    {"name":"analyzeMeal","runtime":"Nodejs20.19","handler":"index.main","timeout":35,"memorySize":128,"installDependency":true,"envVariables":{"DEMO_AI_DAILY_LIMIT":"0"}}
+  ]
+}
