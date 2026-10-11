@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { House, CalendarDays, ListChecks, Sprout, MessageCircle } from "lucide-react";
 import {
   AppState,
   FlowerKind,
@@ -50,6 +51,7 @@ import { MailPage } from "./pages/MailPage";
 
 export default function FamilyIslandApp() {
   const [page, setPage] = useState<PageId>("home");
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [page]);
   const [state, setState] = useState<AppState>(seedState);
   const [hydrated, setHydrated] = useState(false);
   const [statusEditor, setStatusEditor] = useState<PersonId | null>(null);
@@ -356,7 +358,7 @@ function Header({ state, onHome, onSetUser, onEditStatus, onOpenSunlight }: { st
       <button className="brand" onClick={onHome} aria-label="返回晴日岛首页"><span className="brand-sun" /><span><b>晴日岛</b><small>把每一天，养成会发光的样子</small></span></button>
       <div className="header-family">
         <button className="header-sunlight-ledger" type="button" onClick={onOpenSunlight} aria-label={`查看阳光记录，当前 ${state.island.sunlight} 点`}><SunValue value={state.island.sunlight} /><span>查看记录</span></button>
-        <label><span>现在是</span><select value={state.currentUser} onChange={(event) => onSetUser(event.target.value as PersonId)}><option value="brother">弟弟</option><option value="sister">姐姐</option><option value="mom">妈妈</option></select></label>
+        <label><span>现在是</span><select aria-label="当前家庭角色" value={state.currentUser} onChange={(event) => onSetUser(event.target.value as PersonId)}><option value="brother">弟弟</option><option value="sister">姐姐</option><option value="mom">妈妈</option></select></label>
         <button className="header-avatar" onClick={onEditStatus} aria-label="更新我的状态"><PersonMark person={state.currentUser} /></button>
       </div>
     </header>
@@ -364,6 +366,7 @@ function Header({ state, onHome, onSetUser, onEditStatus, onOpenSunlight }: { st
 }
 
 function LiquidNav({ page, onNavigate }: { page: PageId; onNavigate: (page: PageId) => void }) {
+  const icons = { home: House, today: ListChecks, planner: CalendarDays, island: Sprout, mail: MessageCircle };
   const activeIndex = navItems.findIndex((item) => item.id === page);
-  return <nav className="liquid-nav" aria-label="主要页面" style={{ "--active-index": activeIndex } as React.CSSProperties}><span className="liquid-selection" />{navItems.map((item) => <button key={item.id} className={page === item.id ? "active" : ""} onClick={() => onNavigate(item.id)}><i /><span>{item.label}</span></button>)}</nav>;
+  return <nav className="liquid-nav" aria-label="主要页面" style={{ "--active-index": activeIndex } as React.CSSProperties}><span className="liquid-selection" />{navItems.map((item) => { const Icon = icons[item.id]; return <button key={item.id} aria-current={page === item.id ? "page" : undefined} className={page === item.id ? "active" : ""} onClick={() => onNavigate(item.id)}><Icon size={19} strokeWidth={1.8}/><span>{item.label}</span></button>; })}</nav>;
 }

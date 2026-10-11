@@ -61,7 +61,7 @@ export function TodayPage({ state, onToggle, onHabit, onNavigate, onShareMeal, o
             return <article className={`journey-stop ${event.type} ${isDone ? "done" : ""} ${isCurrent ? "current" : ""}`} key={`${event.type}-${event.id}`}>
               <span className="journey-pin"><i>{isDone ? "✓" : index + 1}</i></span>
               <time>{event.time}<small>{event.end}</small></time>
-          <div className="journey-card"><span className="event-kind">{event.type === "class" ? "课程" : task?.subject ?? "任务"}</span><h3>{event.title}</h3>{task ? <button onClick={() => onToggle(task)}>{isDone ? "已完成" : "完成"}<i /></button> : <p>{isDone ? `已结束 · ＋${CLASS_SUNLIGHT} 阳光` : "固定安排"}</p>}</div>
+          <div className="journey-card"><span className="event-kind">{event.type === "class" ? "课程" : task?.subject ?? "任务"}</span><h3>{event.title}</h3>{task ? <button aria-label={`${isDone ? "撤销完成" : "完成任务"}：${task.title}`} onClick={() => onToggle(task)}>{isDone ? "已完成 · 撤销" : `完成 · ＋${task.sunlight} 阳光`}<i /></button> : <p>{isDone ? `已结束 · ＋${CLASS_SUNLIGHT} 阳光` : "固定安排"}</p>}</div>
             </article>;
           }) : <div className="journey-empty"><span className="empty-map-mark">＋</span><h3>今天的小路还没有站点</h3><p>先把一个任务放进今天，旅程就会开始。</p><button onClick={() => onNavigate("planner")}>添加第一个站点</button></div>}
         </div>

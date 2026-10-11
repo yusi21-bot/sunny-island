@@ -2,8 +2,8 @@
 
 import Image from "../components/DemoImage";
 import type { FormEvent } from "react";
-import { useState } from "react";
-import { AppState, IslandState, PersonId, ScheduleItem, Task, personMeta } from "../data";
+import { useEffect, useId, useRef, useState } from "react";
+import { AppState, IslandState, PersonId, ScheduleItem, Task, personMeta, localDate } from "../data";
 import { SUBJECT_ASSETS, type TaskDraft, type TaskPatch } from "../constants";
 import { SunValue } from "../components/SunValue";
 import { PersonMark } from "../components/PersonMark";
@@ -19,7 +19,28 @@ export function PageIntro({ eyebrow, title, text, action }: { eyebrow: string; t
 }
 
 export function ModalShell({ title, overline, onClose, children }: { title: string; overline: string; onClose: () => void; children: React.ReactNode }) {
-  return <div className="modal-backdrop" onMouseDown={onClose}><section className="modal-sheet" onMouseDown={(event) => event.stopPropagation()}><button className="modal-close" onClick={onClose} aria-label="关闭">×</button><span className="overline">{overline}</span><h2>{title}</h2>{children}</section></div>;
+  const titleId = useId();
+  const sheet = useRef<HTMLElement>(null);
+  const close = useRef(onClose);
+  close.current = onClose;
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    sheet.current?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); close.current(); }
+      if (event.key !== "Tab") return;
+      const nodes = Array.from(sheet.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],[tabindex="0"]') ?? []).filter(node => node.getClientRects().length > 0);
+      const first = nodes[0]; const last = nodes[nodes.length - 1];
+      if (!first) { event.preventDefault(); return; }
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === sheet.current)) { event.preventDefault(); last.focus(); }
+      if (!event.shiftKey && (document.activeElement === last || document.activeElement === sheet.current)) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => { document.removeEventListener("keydown", handleKey); document.body.style.overflow = overflow; if (previous?.isConnected) previous.focus(); };
+  }, []);
+  return <div className="modal-backdrop" onMouseDown={onClose}><section ref={sheet} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="modal-sheet" onMouseDown={(event) => event.stopPropagation()}><button className="modal-close" onClick={onClose} aria-label="关闭">×</button><span className="overline">{overline}</span><h2 id={titleId}>{title}</h2>{children}</section></div>;
 }
 
 export function WeeklySeed({ label, value, goal, asset, onChange }: { label: string; value: number; goal: number; asset: string; onChange: (delta: number) => void }) {
@@ -42,7 +63,7 @@ export function TaskComposer({ currentUser, onAdd }: { currentUser: PersonId; on
   const [kind, setKind] = useState<import("../data").TaskKind>("temporary");
   const [owner, setOwner] = useState<PersonId>(currentUser === "brother" ? "brother" : currentUser);
   const submit = (event: FormEvent) => { event.preventDefault(); if (!title.trim()) return; onAdd({ title: title.trim(), subject, kind, owner }); setTitle(""); };
-  return <form className="task-composer task-composer-simple" onSubmit={submit}><label className="quick-task-input"><span>新任务</span><div><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例如：订正三道错题" required /><button type="submit" aria-label="添加到待排期">＋</button></div></label><div className="task-quick-choices"><select value={subject} aria-label="任务科目" onChange={(event) => setSubject(event.target.value)}><option>数学</option><option>语文</option><option>英语</option><option>阅读</option><option>生活</option><option>工作</option></select><select value={owner} aria-label="任务执行人" onChange={(event) => setOwner(event.target.value as PersonId)}><option value="brother">弟弟</option><option value="sister">姐姐</option><option value="mom">妈妈</option></select><button type="button" className={kind === "fixed" ? "selected" : ""} onClick={() => setKind(kind === "fixed" ? "temporary" : "fixed")}>{kind === "fixed" ? "固定任务" : "临时任务"}</button></div><p>添加后直接拖到右侧合适的日期和时间。</p></form>;
+  return <form className="task-composer task-composer-simple" onSubmit={submit}><label className="quick-task-input"><span>新任务</span><div><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例如：订正三道错题" required /><button type="submit" aria-label="添加到待排期">＋</button></div></label><div className="task-quick-choices"><select value={subject} aria-label="任务科目" onChange={(event) => setSubject(event.target.value)}><option>数学</option><option>语文</option><option>英语</option><option>阅读</option><option>生活</option><option>工作</option></select><select value={owner} aria-label="任务执行人" onChange={(event) => setOwner(event.target.value as PersonId)}><option value="brother">弟弟</option><option value="sister">姐姐</option><option value="mom">妈妈</option></select><button type="button" className={kind === "fixed" ? "selected" : ""} onClick={() => setKind(kind === "fixed" ? "temporary" : "fixed")}>{kind === "fixed" ? "固定任务" : "临时任务"}</button></div><p>添加后点击任务安排日期和时间，或拖入日历。</p></form>;
 }
 
 export function DraggableTask({ task, onClick }: { task: Task; onClick: () => void }) {
@@ -59,7 +80,7 @@ export function TaskEditor({ task, onClose, onSave, onDelete, onToggle }: { task
   const hours = Math.floor(duration / 60);
   const minutes = duration % 60;
 
-  return <ModalShell title="编辑任务" overline="任务详情" onClose={onClose}><div className="editor-form"><label><span>任务名称</span><input value={title} onChange={(event) => setTitle(event.target.value)} /></label><div><label><span>类型</span><select value={subject} onChange={(event) => setSubject(event.target.value)}><option>数学</option><option>语文</option><option>英语</option><option>阅读</option><option>生活</option><option>工作</option></select></label><label><span>执行人</span><select value={owner} onChange={(event) => setOwner(event.target.value as PersonId)}><option value="brother">弟弟</option><option value="sister">姐姐</option><option value="mom">妈妈</option></select></label></div><div><label><span>日期</span><input type="date" value={scheduledDate} onChange={(event) => setScheduledDate(event.target.value)} /></label><label><span>开始时间</span><input type="time" value={start} onChange={(event) => setStart(event.target.value)} /></label><label className="duration-field"><span>任务时长</span><div className="duration-editor"><span><input aria-label="任务时长小时" type="number" min={0} max={12} value={hours} onChange={(event) => setDuration(Math.max(1, Math.min(12, Number(event.target.value) || 0) * 60 + minutes))} /><small>小时</small></span><span><input aria-label="任务时长分钟" type="number" min={0} max={59} value={minutes} onChange={(event) => setDuration(Math.max(1, hours * 60 + Math.min(59, Math.max(0, Number(event.target.value) || 0))))} /><small>分钟</small></span></div></label></div><button className={`complete-toggle ${task.completed ? "done" : ""}`} onClick={onToggle}><i />{task.completed ? "已完成，点击恢复" : "标记为已完成"}</button><div className="editor-actions"><button className="delete-action" onClick={onDelete}>删除任务</button><button className="save-action" onClick={() => onSave({ title, subject, owner, scheduledDate: scheduledDate || undefined, start: scheduledDate ? start : undefined, duration: Math.max(1, duration) })}>保存修改</button></div></div></ModalShell>;
+  return <ModalShell title="编辑任务" overline="任务详情" onClose={onClose}><div className="editor-form"><label><span>任务名称</span><input value={title} onChange={(event) => setTitle(event.target.value)} /></label><div><label><span>类型</span><select value={subject} onChange={(event) => setSubject(event.target.value)}><option>数学</option><option>语文</option><option>英语</option><option>阅读</option><option>生活</option><option>工作</option></select></label><label><span>执行人</span><select value={owner} onChange={(event) => setOwner(event.target.value as PersonId)}><option value="brother">弟弟</option><option value="sister">姐姐</option><option value="mom">妈妈</option></select></label></div><div><label><span>日期</span><input type="date" value={scheduledDate} onChange={(event) => setScheduledDate(event.target.value)} /></label><label><span>开始时间</span><input type="time" value={start} onChange={(event) => setStart(event.target.value)} /></label><label className="duration-field"><span>任务时长</span><div className="duration-editor"><span><input aria-label="任务时长小时" type="number" min={0} max={12} value={hours} onChange={(event) => setDuration(Math.max(1, Math.min(12, Number(event.target.value) || 0) * 60 + minutes))} /><small>小时</small></span><span><input aria-label="任务时长分钟" type="number" min={0} max={59} value={minutes} onChange={(event) => setDuration(Math.max(1, hours * 60 + Math.min(59, Math.max(0, Number(event.target.value) || 0))))} /><small>分钟</small></span></div></label></div><div className="schedule-shortcuts"><button type="button" onClick={() => setScheduledDate(localDate())}>安排到今天</button><button type="button" disabled={!scheduledDate} onClick={() => setScheduledDate("")}>取消排期</button><span>{scheduledDate ? `已选 ${scheduledDate}` : "尚未安排日期"}</span></div><button className={`complete-toggle ${task.completed ? "done" : ""}`} onClick={onToggle}><i />{task.completed ? "已完成，点击恢复" : "标记为已完成"}</button><div className="editor-actions"><button className="delete-action" onClick={onDelete}>删除任务</button><button className="save-action" disabled={!title.trim() || Boolean(scheduledDate && !start)} onClick={() => onSave({ title: title.trim(), subject, owner, scheduledDate: scheduledDate || undefined, start: scheduledDate ? start : undefined, duration: Math.max(1, duration) })}>保存修改</button></div></div></ModalShell>;
 }
 
 export function ScheduleEditor({ item, onClose, onSave, onDelete }: { item: ScheduleItem; onClose: () => void; onSave: (patch: Partial<ScheduleItem>) => void; onDelete: () => void }) {
@@ -69,7 +90,7 @@ export function ScheduleEditor({ item, onClose, onSave, onDelete }: { item: Sche
   const [end, setEnd] = useState(item.end);
   const [until, setUntil] = useState(item.until);
   const toggleDay = (day: number) => setDays((current) => current.includes(day) ? current.filter((value) => value !== day) : [...current, day].sort());
-  return <ModalShell title="编辑固定日程" overline="重复课程" onClose={onClose}><div className="editor-form"><label><span>日程名称</span><input value={title} onChange={(event) => setTitle(event.target.value)} /></label><div className="day-picker"><span>每周重复</span><div>{["一", "二", "三", "四", "五", "六", "日"].map((label, index) => <button key={label} className={days.includes(index + 1) ? "selected" : ""} onClick={() => toggleDay(index + 1)}>周{label}</button>)}</div></div><div><label><span>开始</span><input type="time" value={start} onChange={(event) => setStart(event.target.value)} /></label><label><span>结束</span><input type="time" value={end} onChange={(event) => setEnd(event.target.value)} /></label><label><span>截止日期</span><input type="date" value={until} onChange={(event) => setUntil(event.target.value)} /></label></div><div className="editor-actions"><button className="delete-action" onClick={onDelete}>删除日程</button><button className="save-action" onClick={() => onSave({ title, days, start, end, until })}>保存修改</button></div></div></ModalShell>;
+  return <ModalShell title="编辑固定日程" overline="重复课程" onClose={onClose}><div className="editor-form"><label><span>日程名称</span><input value={title} onChange={(event) => setTitle(event.target.value)} /></label><div className="day-picker"><span>每周重复</span><div>{["一", "二", "三", "四", "五", "六", "日"].map((label, index) => <button key={label} className={days.includes(index + 1) ? "selected" : ""} onClick={() => toggleDay(index + 1)}>周{label}</button>)}</div></div><div><label><span>开始</span><input type="time" value={start} onChange={(event) => setStart(event.target.value)} /></label><label><span>结束</span><input type="time" value={end} onChange={(event) => setEnd(event.target.value)} /></label><label><span>截止日期</span><input type="date" value={until} onChange={(event) => setUntil(event.target.value)} /></label></div>{end <= start && <p className="form-error" role="alert">结束时间需要晚于开始时间。</p>}<div className="editor-actions"><button className="delete-action" onClick={onDelete}>删除日程</button><button className="save-action" disabled={!title.trim() || !days.length || !start || !end || end <= start || !until} onClick={() => onSave({ title: title.trim(), days, start, end, until })}>保存修改</button></div></div></ModalShell>;
 }
 
 export function SunlightLedger({ island, onClose }: { island: IslandState; onClose: () => void }) {

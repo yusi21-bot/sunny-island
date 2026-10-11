@@ -35,7 +35,7 @@ export function PlannerPage({ state, onAdd, onUpdateTask, onDeleteTask, onSchedu
     <header className="planner-compact-header"><div><b>家庭计划</b><span>{weekStart.getMonth() + 1} 月 {weekStart.getDate()} 日 — {weekEnd.getMonth() + 1} 月 {weekEnd.getDate()} 日</span></div><div className="week-switch"><button onClick={() => setWeekOffset((value) => value - 1)} aria-label="上一周">←</button><button onClick={() => setWeekOffset(0)}>本周</button><button onClick={() => setWeekOffset((value) => value + 1)} aria-label="下一周">→</button></div></header>
     <div className="planner-layout">
       <aside className="task-dock">
-        <div className="dock-heading"><span className="overline">任务背包</span><h2>带上这周的任务卡</h2><p>新任务会先放进背包，再拖到右侧航线。</p></div>
+        <div className="dock-heading"><span className="overline">任务背包</span><h2>带上这周的任务卡</h2><p>先记下要做的事，再点击任务设置时间，也可以拖入日历。</p></div>
         <TaskComposer currentUser={state.currentUser} onAdd={onAdd} />
         <div className="task-pool">{unscheduled.length ? unscheduled.map((task) => <DraggableTask key={task.id} task={task} onClick={() => setSelectedTaskId(task.id)} />) : <div className="pool-empty"><span /><b>都安排好了</b><small>新的任务会先出现在这里</small></div>}</div>
       </aside>
